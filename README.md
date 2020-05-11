@@ -1,2 +1,2 @@
-# avalon
-Avalon strategy game for Discord servers
+# Avalon
+Avalon strategy game for Discord servers using discord.py
