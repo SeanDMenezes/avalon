@@ -1,7 +1,7 @@
 import discord
 import random
 
-token = "NTU3MDQwOTIwNDc5MDA2NzIw.XLvG_w.zK4Bt_VEj5P58O3del5rwm73qP8"
+#token = *token here*
 client = discord.ext.commands.Bot(command_prefix="!")
 
 # MESSAGES
