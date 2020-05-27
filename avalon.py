@@ -1,3 +1,5 @@
+import sys
+import asyncio
 import time
 import copy
 import random
@@ -11,6 +13,8 @@ import characters
 from characters import *
 
 client = interactions.client
+setup_commands = ["join", "leave", "current", "save", "load", "start", "choices",\
+                  "lotl", "spectate", "spectators"]
 
 # GAME CONSTANTS
 MISSIONS = {5:[2,3,2,3,3], 6:[2,3,4,3,4], 7:[2,3,3,4,4]}
@@ -296,11 +300,13 @@ async def avalon(ctx):
 ROLE_CHOICE = 0
 async def setup(ctx, g=Game(), spec=[]):
     ''' enters setup mode'''
-    for cmd in ["join", "leave", "current", "save", "load", "start", "choices", "lotl"]:
-        client.remove_command(cmd)
     # handle multiple instances of game
     global ROLE_CHOICE
+    for cmd in setup_commands:
+        client.remove_command(cmd)
+    
     og = ctx
+
     await og.send("Welcome to Avalon. Join the party to be included in the next game.")
 
     def update_roles():
@@ -472,8 +478,7 @@ async def setup(ctx, g=Game(), spec=[]):
             await s.send(embed=spec_embed)
                 
         await og.send("Starting the game...")
-        for cmd in ["join", "leave", "current", "save", "load", "start", "choices",\
-                     "lotl", "spectate", "spectators"]:
+        for cmd in setup_commands:
             client.remove_command(cmd)
         await play(g, ctx)
         
@@ -681,5 +686,5 @@ async def play(g: Game, ctx):
     client.remove_command("history")
     client.remove_command("reset")
     await setup(ctx, g)
-    
+
 client.run(interactions.token)
