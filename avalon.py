@@ -79,7 +79,7 @@ class Game:
     # Game is a listof Players, listof Roles, list of Missions, discord user for lotl in game or not
     def __init__(self, players=[], roles=[], missions=[], lotl=None):
         '''
-        players: list(Player), roles: list(Character), missions: list(Mission) 
+        players: list(Player), roles: list(Character), missions: list(Mission), lotl: Lady 
 
         '''
         self.players = players
@@ -102,30 +102,21 @@ class Game:
         pickled_players = []
         for p in self.players:
             pickled_players.append(p.pickle())
-        pickled_missions = []
-        for m in self.missions:
-            pickled_missions.append(m.pickle())
-        return (pickled_players, pickled_missions)
+        return pickled_players
     
     async def unpickle(self, ctx, val):
         new_players = []
-        new_missions = []
-        for p in val[0]:
+        for p in val:
             temp = Player(ctx.author)
             await temp.unpickle(ctx, p)
             new_players.append(temp)
-        for m in val[1]:
-            temp = Mission([])
-            await temp.unpickle(ctx, m)
-            new_missions.append(temp)
         self.players = new_players
-        self.missions = new_missions
 
 @client.event
 async def on_ready():
     print("Logged in")
     game = discord.Game("Avalon")
-    await client.change_presence(status=discord.Status.online,activity=game)
+    await client.change_presence(status=discord.Status.online, activity=game)
 
 @client.event
 async def on_message(message):
@@ -400,7 +391,7 @@ async def setup(ctx, g=Game(), spec=[]):
     
         specs = ""
         if len(spec) == 0:
-            specs += "Nobody is currently is spectate mode!"
+            specs += "Nobody is currently in spectate mode!"
         else:
             for s in spec:
                 specs += s.mention + "\n"
@@ -438,9 +429,6 @@ async def setup(ctx, g=Game(), spec=[]):
             await g.unpickle(ctx, pickle.load(open("savefile.txt", "rb")))
             update_roles()
             await ctx.send("Load successful.")
-            # if len(g.missions) > 0:
-            #     await ctx.send("Continuing game at mission {0}".format(len(g.missions)))
-            #     await play(g, ctx)
         except:
             await ctx.send("Load unsuccessful.")
 
@@ -479,7 +467,7 @@ async def setup(ctx, g=Game(), spec=[]):
             await p.name.send(embed=player_embed)
 
         spec_embed.add_field(name="Roles", value=spec_msg, inline=False)
-        await ctx.send(embed=spec_embed)
+        
         for s in spec:
             await s.send(embed=spec_embed)
                 
@@ -542,7 +530,6 @@ async def play(g: Game, ctx):
                     rez.append(p)
 
             ind = random.randint(0, 1)
-            print(ind)
             if ind == 1:
                 g.lotl.owner = random.choice(spies)
             else:
@@ -653,11 +640,11 @@ async def play(g: Game, ctx):
         elif p.role == "Merlin":
             merl = p
 
-    embed = discord.Embed(title="Game Over!", color=0xff8000)
+    all_roles = discord.Embed(title="Game Over!", color=0xff8000)
     msg = ""
     for p in g.players:
         msg += p.name.mention + ": " + str(p.role) + "\n"
-    embed.add_field(name="Roles", value=msg, inline=False)
+    all_roles.add_field(name="Roles", value=msg, inline=False)
 
     sps = "The spies were"
     for i in range(len(spies)):
@@ -666,24 +653,29 @@ async def play(g: Game, ctx):
         sps += " {0}".format(spies[i][0].mention)
     sps += "."
 
+    # 5 CONSEC DISAPPROVES, SPIES WIN
     if consec_disapproves == 5:
         await ctx.send("There were 5 consecutive disapproves. Spies win!")
+    # RESISTANCE WINS
     elif success == 3: # resistance wins
-        # assassination attempt
+        # ASSASSINATION ATTEMPT
         await ctx.send("3 missions have succeeded! The spies now get a chance to assassinate Merlin.")
         await ctx.send(sps + " {0} gets the final decision.".format(assassin))
         rez_list = list(map(lambda x: Player(x[0]), rez))
         selection = await choose_players(ctx, rez_list, assassin, 1)
         await ctx.send("The spies have chosen {0}...".format(selection[0].name.mention))
         time.sleep(2)
+        # SPIES WIN
         if selection[0].name == merl.name:
             await ctx.send("Correct! Spies win!")
+        # RESISTANCE WINS
         else:
             await ctx.send("Incorrect, {0} was Merlin. Resistance wins!".format(merl.name.mention))
+    # SPIES WIN
     else:
         await ctx.send("3 missions have failed! The spies win!")
 
-    await ctx.send(embed=embed)
+    await ctx.send(embed=all_roles)
 
     g.missions = []
     client.remove_command("history")
