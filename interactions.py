@@ -1,7 +1,7 @@
 import discord
 import random
 
-#token = token goes here 
+#token = *token here*
 client = discord.ext.commands.Bot(command_prefix="!")
 
 # MESSAGES
@@ -21,7 +21,8 @@ current = "current - display current game settings\n"
 start = "start - begin the game\n"
 save = "save - saves the current state of the game (current players and missions)\n"
 load = "load - loads the most recently saved game state\n"
-setup_mode = [join, leave, spectate, spectators, lotl, choices, current, start]#, save, load]
+clear = "clear - clear the current game settings and exit setup mode\n"
+setup_mode = [join, leave, spectate, spectators, lotl, choices, current, start, clear]#, save, load]
 
 history = "history - display past missions\n"
 votes = "votes - shows number of approves/disapproves for a mission\n"
@@ -29,6 +30,7 @@ in_game = [history, votes]
 
 ## ROLE DESCRIPTIONS
 roles = {"resistance": "You are part of the Resistance. Lacking any special gifts, you must figure out the roles of other players. If successful on your missions, the spies will try to assassinate Merlin and topple the Resistance. By impersonating Merlin, you can save Avalon.",
+          "spy": "You are a spy. Being a Minion of Mordred, your sole goal is to fail 3 of the 5 possible missions. Attempt to blend in with the other resistance members to confuse the opposing team. Deceipt and lies are the keys to your victory.",
           "oberon": "You are a spy. Unlike the other spies however, your role is not known to Merlin, nor the other spies. Use your concealment to your advantage, deceiving Merlin while helping your fellow spies. Conceal your role, and know that you revel in secrecy.",
           "assassin": "You are a spy. It is your role infiltrate the Resistance, gain their trust, and bring their downfall by failing missions. If the Resistance foils your plan, you may redeem yourself by assassinating Merlin. Be warned, assassinating the wrong player results in total defeat.",
           "merlin": "You are part of the Resistance. It is your job to guide the Resistance to victory using your knowledge of the spies’ identities. Be warned, if you do succeed they will attempt to assassinate you. Conceal your role, be as discreet as possible.",
@@ -42,7 +44,7 @@ roles = {"resistance": "You are part of the Resistance. Lacking any special gift
 @client.command()
 async def role(ctx, char=""):
     if char.lower() not in ["resistance", "oberon", "assassin", "merlin", "percival", "morgana",\
-                            "regularlotl", "parodylotl", "cleblotl"]:
+                            "regularlotl", "parodylotl", "cleblotl", "spy"]:
         await ctx.send("That isn't a valid character.")
         return
     await ctx.send(roles[char.lower()])

@@ -25,6 +25,7 @@ class Spy(Character):
     def __init__(self):
         super().__init__()
         self.allegiance = "spy"
+        self.url = "https://i.imgur.com/c8uPuTU.png"
     
     def display_message(self):
         other_spies = []
@@ -38,7 +39,7 @@ class Spy(Character):
         else:
             spies = ""
             for s in other_spies:
-                spies += "{0} ".format(s[0].mention)
+                spies += "{0} ".format(s.mention)
             return "You are a spy. The other spies are " + spies + ".\n"
 
 class Assassin(Spy):
