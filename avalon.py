@@ -610,7 +610,8 @@ async def play(g: Game, ctx):
         results = await approve(ctx, inform, len(g.players)) # NEED TO HANDLE MULTIPLE VOTES FROM SAME PERSON
 
         # RESULTS TRUE IFF APPROVES > DISSAPROVES
-        if not results: # MISSION DISAPPROVED
+        # MISSION DISAPPROVED
+        if not results:
             await ctx.send("Mission disapproved!")
             consec_disapproves += 1
             chosen = next_player(chosen)
