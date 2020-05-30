@@ -14,15 +14,19 @@ from characters import *
 
 client = interactions.client
 setup_commands = ["join", "leave", "current", "save", "load", "start", "choices",\
-                  "lotl", "spectate", "spectators"]
+                  "lotl", "spectate", "spectators", "clear"]
 
 # GAME CONSTANTS
 MISSIONS = {5:[2,3,2,3,3], 6:[2,3,4,3,4], 7:[2,3,3,4,4]}
 ROLES = {5:[[Resistance(), Merlin(), Percival(), Morgana(), Assassin()],
-            [Resistance(), Merlin(), Percival(), Morgana(), Oberon()]],
+            [Resistance(), Merlin(), Percival(), Morgana(), Oberon()],
+            [Resistance(), Resistance(), Merlin(), Assassin(), Spy()]],
         6:[[Resistance(), Resistance(), Merlin(), Percival(), Morgana(), Assassin()],
-           [Resistance(), Resistance(), Merlin(), Percival(), Morgana(), Oberon()]],
-        7: [[Resistance(), Resistance(), Merlin(), Percival(), Morgana(), Oberon(), Assassin()]]}
+           [Resistance(), Resistance(), Merlin(), Percival(), Morgana(), Oberon()],
+           [Resistance(), Resistance(), Resistance(), Merlin(), Assassin(), Spy()]],
+        7: [[Resistance(), Resistance(), Merlin(), Percival(), Morgana(), Oberon(), Assassin()],
+            [Resistance(), Resistance(), Resistance(), Merlin(), Assassin(), Spy(), Spy()],
+            [Resistance(), Resistance(), Percival(), Merlin(), Assassin(), Morgana(), Spy()]]}
 
 # EMOJIS
 PASS = '\U00002705'
@@ -299,22 +303,32 @@ async def avalon(ctx):
 
 ROLE_CHOICE = 0
 async def setup(ctx, g=Game(), spec=[]):
-    ''' enters setup mode'''
-    # handle multiple instances of game
-    global ROLE_CHOICE
-    for cmd in setup_commands:
-        client.remove_command(cmd)
-    
-    og = ctx
-
-    await og.send("Welcome to Avalon. Join the party to be included in the next game.")
 
     def update_roles():
         try:
             g.roles = ROLES[len(g.players)][ROLE_CHOICE]
         except:
             print("Not supported for that many ppl")
-            
+    
+    def clear_commands():
+        for cmd in setup_commands:
+            client.remove_command(cmd)
+    
+    def reset():
+        global ROLE_CHOICE
+        ROLE_CHOICE = 0
+        g.lotl = None
+        g.players = []
+        g.roles = []
+        g.missions = []
+        spec.clear()
+    
+    global ROLE_CHOICE
+    clear_commands()
+    og = ctx
+    await og.send("Welcome to Avalon. Join the party to be included in the next game.")
+
+    
     @client.command()
     async def join(ctx):
         ''' joins the party '''
@@ -432,11 +446,19 @@ async def setup(ctx, g=Game(), spec=[]):
     @client.command()
     async def load(ctx):
         try:
+            reset()
             await g.unpickle(ctx, pickle.load(open("savefile.txt", "rb")))
             update_roles()
             await ctx.send("Load successful.")
         except:
             await ctx.send("Load unsuccessful.")
+
+    @client.command()
+    async def clear(ctx):
+        reset()        
+        await og.send("{0} has reset all current game settings.".format(ctx.author.mention))
+        await og.send("Exiting game...")
+        clear_commands()
 
     @client.command()
     async def start(ctx):
@@ -478,8 +500,7 @@ async def setup(ctx, g=Game(), spec=[]):
             await s.send(embed=spec_embed)
                 
         await og.send("Starting the game...")
-        for cmd in setup_commands:
-            client.remove_command(cmd)
+        clear_commands()
         await play(g, ctx)
         
 
@@ -500,6 +521,9 @@ async def play(g: Game, ctx):
             msg += "MISSION {0}: {1}\n".format(i + 1, repr(g.missions[i]))
         embed = discord.Embed(title="Mission History", description=msg, color=0xff8000)
         await ctx.send(embed=embed)
+
+    async def disapproved(ctx):
+        pass
 
 
     def save():
