@@ -99,9 +99,9 @@ class Percival(Resistance):
 
         x = random.randint(0,1)
         if x == 0:
-            return "Keep an eye on {0} and {1}. One of them is Merlin and one of them is Morgana"\
+            return "Keep an eye on {0} and {1}. One of them is Merlin and one of them is Morgana."\
             .format(merl.mention, morg.mention)
-        return "Keep an eye on {0} and {1}. One of them is Merlin and one of them is Morgana"\
+        return "Keep an eye on {0} and {1}. One of them is Merlin and one of them is Morgana."\
             .format(morg.mention, merl.mention)
 
 class Lady:
@@ -140,4 +140,3 @@ class ParodyLOTL(Lady):
 class ClebLOTL(RegularLOTL):
     def __init__(self, owner):
         self.owner = owner   
-

@@ -14,9 +14,10 @@ from characters import *
 
 client = interactions.client
 setup_commands = ["join", "leave", "current", "save", "load", "start", "choices",\
-                  "lotl", "spectate", "spectators", "clear"]
+                  "lotl", "spectate", "spectators", "clear", "leaderboard", "points"]
 
 # GAME CONSTANTS
+ALL_SPIES = ["Oberon", "Assassin", "Morgana", "Spy"]
 MISSIONS = {5:[2,3,2,3,3], 6:[2,3,4,3,4], 7:[2,3,3,4,4]}
 ROLES = {5:[[Resistance(), Merlin(), Percival(), Morgana(), Assassin()],
             [Resistance(), Merlin(), Percival(), Morgana(), Oberon()],
@@ -42,9 +43,10 @@ LETTER_H = '\U0001F1ED'
 LETTERS = [LETTER_A, LETTER_B, LETTER_C, LETTER_D, LETTER_E, LETTER_F, LETTER_G, LETTER_H]
 
 class Player:
-    def __init__(self, name: discord.user, role=None):
+    def __init__(self, name: discord.user, role=None, points=0):
         self.name = name
         self.role = role
+        self.points = points
     def __eq__(self, other):
         return self.name == other.name
     def __repr__(self):
@@ -393,6 +395,26 @@ async def setup(ctx, g=Game(), spec=[]):
             print("Lotl something went wrong")
 
     @client.command()
+    async def leaderboard(ctx):
+        if len(g.players) == 0:
+            await ctx.send("There are no players currently in the game!")
+        else:
+            sorted_players = sorted(g.players, key=lambda player: player.points, reverse=True)
+            msg = ""
+            for p in sorted_players:
+                msg += "{0} - {1} points\n".format(p.name.mention, p.points)
+            leaderboard_embed = discord.Embed(title="Current Point Totals", description=msg, color=0xff8000)
+            await ctx.send(embed=leaderboard_embed)
+
+    @client.command()
+    async def points(ctx):
+        for p in g.players:
+            if p.name == ctx.author:
+                await ctx.send("{0} currently has {1} points.".format(p.name.mention, p.points))
+                return
+        await ctx.send("{0} is currently not in the game!".format(ctx.author.mention))
+
+    @client.command()
     async def current(ctx):
         cur = discord.Embed(title="Current Settings", color=0xff8000)
         players = ""
@@ -522,9 +544,14 @@ async def play(g: Game, ctx):
         embed = discord.Embed(title="Mission History", description=msg, color=0xff8000)
         await ctx.send(embed=embed)
 
-    async def disapproved(ctx):
-        pass
-
+    # increments point total for players by points - increments for spies if for_spies is true,
+    #   and for rez if for_spies is false
+    def increment_points(players, points, for_spies):
+        for p in players:
+            if str(p.role) in ALL_SPIES and for_spies:
+                p.points += points
+            elif str(p.role) not in ALL_SPIES and not for_spies:
+                p.points += points
 
     def save():
         pickle.dump(g.pickle(), open("savefile.txt", "wb"))
@@ -553,7 +580,7 @@ async def play(g: Game, ctx):
             spies = []
             rez = []
             for p in g.players:
-                if str(p.role) in ["Oberon", "Assassin", "Morgana"]:
+                if str(p.role) in ALL_SPIES:
                     spies.append(p)
                 else:
                     rez.append(p)
@@ -683,11 +710,14 @@ async def play(g: Game, ctx):
         sps += " {0}".format(spies[i][0].mention)
     sps += "."
 
-    # 5 CONSEC DISAPPROVES, SPIES WIN
+    # 5 CONSEC DISAPPROVES, SPIES WIN - EACH SPY GETS 3 POINTS
     if consec_disapproves == 5:
+        increment_points(g.players, 3, True)
         await ctx.send("There were 5 consecutive disapproves. Spies win!")
+
     # RESISTANCE WINS
-    elif success == 3: # resistance wins
+    elif success == 3:
+
         # ASSASSINATION ATTEMPT
         await ctx.send("3 missions have succeeded! The spies now get a chance to assassinate Merlin.")
         await ctx.send(sps + " {0} gets the final decision.".format(assassin))
@@ -695,18 +725,25 @@ async def play(g: Game, ctx):
         selection = await choose_players(ctx, rez_list, assassin, 1)
         await ctx.send("The spies have chosen {0}...".format(selection[0].name.mention))
         time.sleep(2)
-        # SPIES WIN
+
+        # SPIES WIN - EACH SPY GETS 1 POINTS
         if selection[0].name == merl.name:
+            increment_points(g.players, 1, True)
             await ctx.send("Correct! Spies win!")
-        # RESISTANCE WINS
+
+        # RESISTANCE WINS - EACH REZ GETS 2 POINTS
         else:
+            increment_points(g.players, 2, False)
             await ctx.send("Incorrect, {0} was Merlin. Resistance wins!".format(merl.name.mention))
-    # SPIES WIN
+
+    # SPIES WIN - EACH SPY GETS 3 POINTS
     else:
+        increment_points(g.players, 3, True)
         await ctx.send("3 missions have failed! The spies win!")
 
     await ctx.send(embed=all_roles)
 
+    # RESET GAME AND GO BACK TO SETUP MODE
     g.missions = []
     client.remove_command("history")
     client.remove_command("reset")
